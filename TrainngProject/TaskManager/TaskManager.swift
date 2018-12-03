@@ -15,18 +15,18 @@ protocol TaskManager {
 }
 
 protocol Task {
-    func finishTask()
+    func finish()
 }
 
-class MyTask : Task {
-    let finishBody: ()-> Void
+class TaskManagerTask: Task {
+    private let finishBlock: ()-> Void
     
-    init (finishBody: @escaping ()-> Void){
-        self.finishBody = finishBody
+    init (finishBlock: @escaping ()-> Void){
+        self.finishBlock = finishBlock
     }
     
-    func finishTask() {
-        finishBody()
+    func finish() {
+        finishBlock()
     }
 }
 
@@ -82,9 +82,11 @@ class TaskManagerImpl: TaskManager {
         serialQueue.async {
         
             self.dispachGroup.enter()
-            task(MyTask(finishBody:{ [weak self] in
+            
+            task(TaskManagerTask(finishBlock:{ [weak self] in
                 self?.dispachGroup.leave()
             }))
+            
             self.dispachGroup.wait()
             self.continueTasks()
         }
@@ -112,20 +114,20 @@ class Testing {
         .addTask { [weak self] (task) in
             self?.testLongFunction(delayTime: 1) {
                 globalDelayTime = globalDelayTime + 1
-                task.finishTask()
+                task.finish()
             }
         }
         .addTask { [weak self] (task) in
             self?.testLongFunction(delayTime: 2) {
                 globalDelayTime = globalDelayTime + 1
                 builder.cancelAll()
-                task.finishTask()
+                task.finish()
             }
         }
         .addTask { [weak self] (task) in
                 self?.testLongFunction(delayTime: 3) {
                     globalDelayTime = globalDelayTime + 1
-                    task.finishTask()
+                   task.finish()
                 }
         }
         .build().start()
