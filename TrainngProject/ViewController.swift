@@ -10,13 +10,13 @@ import UIKit
 
 class ViewController: UIViewController {
 
-    var testing = Testing()
+    var testing = TestingTaskManager()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        testing.start()
+        testing.startRegular()
     }
 
 

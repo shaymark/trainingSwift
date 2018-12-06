@@ -9,16 +9,16 @@
 import Foundation
 
 protocol TaskManager {
-//    func addTask(body: @escaping ((Task) -> Void))
-//    func cancelAll()
+    func addTask(body: @escaping ((TaskController) -> Void))
+    func cancelAll()
     func start()
 }
 
-protocol Task {
+protocol TaskController {
     func finish()
 }
 
-class TaskManagerTask: Task {
+class TaskManagerTaskContrller: TaskController {
     private let finishBlock: ()-> Void
     
     init (finishBlock: @escaping ()-> Void){
@@ -35,7 +35,7 @@ class TaskManagerImplBuilder {
     
     private let manager = TaskManagerImpl()
     
-    func addTask(body: @escaping ((Task) -> Void)) -> TaskManagerImplBuilder{
+    func addTask(body: @escaping ((TaskController) -> Void)) -> TaskManagerImplBuilder{
         manager.addTask(body: body)
         return self
     }
@@ -53,13 +53,13 @@ class TaskManagerImpl: TaskManager {
     
     private let dispachGroup = DispatchGroup()
     
-    let serialQueue = DispatchQueue(label: "queuename")
+    private let serialQueue = DispatchQueue(label: "queuename")
     
-    private var queque : Queue<((Task) -> Void)> = Queue()
+    private var queque : Queue<((TaskController) -> Void)> = Queue()
     
     private var isInProcess = false
     
-    func addTask(body: @escaping ((Task) -> Void)){
+    func addTask(body: @escaping ((TaskController) -> Void)){
         queque.enqueue(body)
     }
     
@@ -78,12 +78,11 @@ class TaskManagerImpl: TaskManager {
         isInProcess = false
     }
     
-    private func executeTask(task: @escaping (Task) -> ()){
+    private func executeTask(task: @escaping (TaskController) -> ()){
         serialQueue.async {
-        
             self.dispachGroup.enter()
             
-            task(TaskManagerTask(finishBlock:{ [weak self] in
+            task(TaskManagerTaskContrller(finishBlock:{ [weak self] in
                 self?.dispachGroup.leave()
             }))
             
@@ -102,9 +101,9 @@ class TaskManagerImpl: TaskManager {
     }
 }
 
-class Testing {
+class TestingTaskManager {
     
-    func start(){
+    func testBuilder(){
         
         var globalDelayTime = 1
         
@@ -135,37 +134,37 @@ class Testing {
         
     }
     
-    func startRegular(){
-//        let taskManager: TaskManager = TaskManagerImpl()
-//
-//        var globalDelayTime = 1
-//
-//                taskManager.addTask { [weak self] (task) in
-//                    self?.testLongFunction(delayTime: 1) {
-//                        globalDelayTime = globalDelayTime + 1
-//                        task.finishTask()
-//                    }
-//                }
-//                print("one added")
-//                taskManager.addTask { [weak self] (task) in
-//                    self?.testLongFunction(delayTime: 2) {
-//                        globalDelayTime = globalDelayTime + 1
-//                        taskManager.cancelAll()
-//                        task.finishTask()
-//                    }
-//                }
-//                 print("two added")
-//                taskManager.addTask { [weak self] (task) in
-//                    self?.testLongFunction(delayTime: 3) {
-//                        globalDelayTime = globalDelayTime + 1
-//                        task.finishTask()
-//                    }
-//                }
-//                 print("three added")
-//        
-//                taskManager.start()
-//                print("continue")
-//        
+    func testRegular(){
+        let taskManager: TaskManager = TaskManagerImpl()
+
+        var globalDelayTime = 1
+
+        taskManager.addTask { [weak self] (task) in
+            self?.testLongFunction(delayTime: 1) {
+                globalDelayTime = globalDelayTime + 1
+                task.finish()
+            }
+        }
+        print("one added")
+        taskManager.addTask { [weak self] (task) in
+            self?.testLongFunction(delayTime: 2) {
+                globalDelayTime = globalDelayTime + 1
+                taskManager.cancelAll()
+                task.finish()
+            }
+        }
+         print("two added")
+        taskManager.addTask { [weak self] (task) in
+            self?.testLongFunction(delayTime: 3) {
+                globalDelayTime = globalDelayTime + 1
+                task.finish()
+            }
+        }
+         print("three added")
+
+        taskManager.start()
+        print("continue")
+        
     }
         
     
